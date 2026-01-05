@@ -1,12 +1,6 @@
-module Days.D1 (p1) where
+module Days.D1 (p1, p2) where
 
-data Dir = Left | Right deriving (Show, Eq)
-
-parseDir :: Char -> Dir
-parseDir char = case char of
-    'L' -> Days.D1.Left
-    'R' -> Days.D1.Right
-    _ -> error "Unexpected direction"
+data Dir = DLeft | DRight deriving (Show, Eq)
 
 data Step = Step
     { dir :: Dir
@@ -14,31 +8,63 @@ data Step = Step
     }
     deriving (Eq, Show)
 
-parseLine :: String -> Step
-parseLine line =
-    Step thisDir thisNum
-  where
-    thisDir = parseDir (head line)
-    thisNum = read (drop 1 line)
-
 data State = State
     { count :: Int
     , position :: Int
     }
+    deriving (Eq, Show)
+
+parseDir :: Char -> Dir
+parseDir char = case char of
+    'L' -> DLeft
+    'R' -> DRight
+    _ -> error "Unexpected direction"
+
+parseLine :: String -> Step
+parseLine line =
+    let thisDir = case line of
+            [] -> error "Empty line!"
+            hd : _ -> parseDir hd
+        thisNum = read (drop 1 line)
+     in Step thisDir thisNum
+
+runStep :: Int -> Step -> Int
+runStep curr step = case dir step of
+    DLeft -> curr - num step
+    DRight -> curr + num step
 
 reduceState :: State -> Step -> State
 reduceState state step = State newCount newPosition
   where
     newCount = count state + (if newPosition == 0 then 1 else 0)
+    newPositionUnrounded = runStep (position state) step
     newPosition = case dir step of
-        Days.D1.Left -> mod (position state - num step) 100
-        Days.D1.Right -> mod (position state + num step) 100
+        DLeft -> mod newPositionUnrounded 100
+        DRight -> mod newPositionUnrounded 100
+
+divEuclid :: Int -> Int -> Int
+divEuclid a b = fst (divMod a b)
+
+reduceState2 :: State -> Step -> State
+reduceState2 state step =
+    let oldPos = position state
+        newPos = runStep oldPos step
+        zeros = case dir step of
+            DLeft -> divEuclid (oldPos - 1) 100 - divEuclid (newPos - 1) 100
+            DRight -> divEuclid newPos 100
+     in State (count state + zeros) (mod newPos 100)
 
 parseLines :: String -> [Step]
 parseLines inputs = map parseLine (lines inputs)
 
 p1 :: String -> String
 p1 inputs = (show . count) (foldl reduceState initState steps)
+  where
+    initState = State 0 50
+    steps = parseLines inputs
+
+p2 :: String -> String
+p2 inputs = (show . count) (foldl reduceState2 initState steps)
   where
     initState = State 0 50
     steps = parseLines inputs
