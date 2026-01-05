@@ -1,4 +1,6 @@
-module Days.D1 (p1, p2) where
+module Days.D1 (d1) where
+
+import Common (Day (..))
 
 data Dir = DLeft | DRight deriving (Show, Eq)
 
@@ -68,3 +70,6 @@ p2 inputs = (show . count) (foldl reduceState2 initState steps)
   where
     initState = State 0 50
     steps = parseLines inputs
+
+d1 :: Day
+d1 = Day 1 p1 p2
